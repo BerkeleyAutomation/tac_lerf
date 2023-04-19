@@ -1,0 +1,47 @@
+exper_name: rotation_cont
+# **
+# Training/optimization params
+# **
+epochs: 500
+initial_lr: 1.0e-4
+weight_decay: 1.0e-5
+lr_decay: .995
+use_temp: False
+init_temperature: 1.0
+grad_clip: .5
+model_type: regnet_800
+feature_dim: 784
+mlp_layers: [512]
+rotation_list: [0,90,180,270]
+# rotation_list: [0,40,80,120,160,200,240,280,320]
+devices: [0]
+freeze_img_enc: False
+continuous: True
+do_buckets: False
+# **
+# Dataset params
+# **
+batch_size: 32
+accumulate_gradients: 1
+#batch size and eval_batch must be divisible by repeat_rotations
+#repeat_rotations is the number of times to include the same rotated image in the batch
+num_cores: 16
+train_test_split: 0.95
+dataset_dir: /raid/jkerr/tac_vision/data/ur_data
+heatmap_dir: /raid/jkerr/tac_vision/data/heatmap
+heatmap_scales: [.1]
+eval_every: 2
+eval_batch: 64
+use_background: False
+# spatial_aug can be none, independent, or paired
+# paired applies transforms which are consistent between pairs of training images
+# independent applies random transforms to each image independently
+# none does not apply any spatial transforms
+augment: False
+spatial_aug: paired
+im_scale_range: [.12,.18]
+#these specify the size of the largest dimension
+rgb_size: [128,128]
+tac_size: [128,128]
+cache_data: false
+

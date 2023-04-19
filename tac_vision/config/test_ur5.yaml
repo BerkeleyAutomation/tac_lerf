@@ -1,0 +1,91 @@
+load: True
+#type can be tsne_batch, tsne_single, tsne_all, pca_batch, pca_single, pca_all, or heatmap
+test_type: 'heatmap'
+encoder:
+  rgb_size: [128,128]
+  tac_size: [128,128]
+  #8 dim
+  # model_dir: /home/ravenhuang/tactile/tac_vision/output/8dimcontrastive6289/models/epoch=319-step=5760.ckpt
+  #16 dim
+  # model_dir: /home/ravenhuang/tactile/tac_vision/output/contrastive2775/models/epoch=239-step=4320.ckpt
+  #32 dim
+  # model_dir: /home/ravenhuang/tactile/tac_vision/output/contrastive218/models/epoch=489-step=8820.ckpt
+  #64 dim
+  # model_dir: /home/ravenhuang/tactile/tac_vision/output/contrastive361/models/epoch=499-step=9000.ckpt
+  #256 dim
+  # model_dir: /home/ravenhuang/tactile/tac_vision/output/contrastive3417/models/epoch=419-step=14700.ckpt
+  #256 dim, 4 rotations in set
+  # model_dir: /home/ravenhuang/tactile/tac_vision/output/contrastive6509/models/epoch=429-step=29670.ckpt
+  # regnet 800 32 dim 512 batch
+  #trans aug
+  # model_dir: /home/ravenhuang/tac_vis/tac_vision/output/contrastive238607/models/epoch=449-step=2250.ckpt 
+  # model_yaml: /home/ravenhuang/tac_vis/tac_vision/output/contrastive238607/params.yaml
+  #old
+  # model_dir: /home/ravenhuang/tac_vis/tac_vision/models/contrastive92313/models/epoch=499-step=1500.ckpt
+  # model_yaml: /home/ravenhuang/tac_vis/tac_vision/models/contrastive92313/params.yaml
+  # "new data, no hue"
+  # model_dir: /home/ravenhuang/tac_vis/tac_vision/output/contrastive99402/models/epoch=239-step=1440.ckpt
+  # model_yaml: /home/ravenhuang/tac_vis/tac_vision/output/contrastive99402/params.yaml
+  #"new data, with hue"
+  # model_dir: /home/ravenhuang/tac_vis/tac_vision/output/contrastive657779/models/epoch=189-step=1140.ckpt
+  # model_yaml: /home/ravenhuang/tac_vis/tac_vision/output/contrastive657779/params.yaml
+  #"no location aug"
+  # model_dir: /home/ravenhuang/tac_vis/tac_vision/output/contrastive564715/models/epoch=279-step=1400.ckpt
+  # model_yaml: /home/ravenhuang/tac_vis/tac_vision/output/contrastive564715/params.yaml
+  #with location aug
+  model_dir: /home/ravenhuang/tac_vis/tac_vision/output/contrastive238607/models/epoch=449-step=2250.ckpt
+  model_yaml: /home/ravenhuang/tac_vis/tac_vision/output/contrastive238607/params.yaml
+  rot_model_dir: /home/ravenhuang/tac_vis/tac_vision/output/pretrainrotation775979/models/
+
+eval_batch: 256
+#towel on speckled background
+# load_dirs: [data/towel_rotated_yellow/images_set_2,data/towel_rotated_yellow/images_set_3,data/towel_rotated_yellow/images_set_4,
+#             data/towel_rotated_yellow/images_set_5,data/towel_rotated_yellow/images_set_6]
+#towel on white background
+# load_dirs: [data/towel_rotated_yellow/images_set_7,data/towel_rotated_yellow/images_set_8,data/towel_rotated_yellow/images_set_9,
+#             data/towel_rotated_yellow/images_set_10,data/towel_rotated_yellow/images_set_11]
+#towel on both backgrounds (yellow)
+# load_dirs: [data/towel_rotated_yellow/images_set_2,data/towel_rotated_yellow/images_set_3,data/towel_rotated_yellow/images_set_4,
+#             data/towel_rotated_yellow/images_set_5,data/towel_rotated_yellow/images_set_6,data/towel_rotated_yellow/images_set_7,data/towel_rotated_yellow/images_set_8,data/towel_rotated_yellow/images_set_9,
+#             data/towel_rotated_yellow/images_set_10,data/towel_rotated_yellow/images_set_11]
+#towel on white background
+
+#9 is wrench
+#7 is zip
+#6 is button
+#25 is domino
+# 23 is towel edge
+load_dirs: [output_test_live/heatmap/images_set_2,output_test_live/heatmap/images_set_3,output_test_live/heatmap/images_set_4,output_test_live/heatmap/images_set_5]
+# data/heatmap/images_set_7, data/heatmap/images_set_9,
+          # data/heatmap/images_set_6,data/heatmap/images_set_25,data/heatmap/images_set_23]
+# load_dirs: [data/sticky_note/images_set_3]
+out_dir: output_test_live/heatmap
+rotation: [0]
+crop_ratios: [0.1]
+grayscale: true
+#this is the number of patches in the width dimension
+stride: 40
+
+dataset:
+  batch_size: 256
+  #batch size and eval_batch must be divisible by repeat_rotations
+  #repeat_rotations is the number of times to include the same rotated image in the batch
+  repeat_rotations: 1
+  num_cores: 10
+  dataset_dir: data/ur_data
+  use_background: False
+  # spatial_aug can be none, independent, or paired
+  # paired applies transforms which are consistent between pairs of training images
+  # independent applies random transforms to each image independently
+  # none does not apply any spatial transforms
+  augment: true
+  spatial_aug: paired
+  im_scale_range: [.15,.15]
+  #these specify the size of the largest dimension
+  rgb_size: [128,128]
+  tac_size: [128,128]
+  cache_data: false
+
+
+
+

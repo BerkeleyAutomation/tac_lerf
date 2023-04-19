@@ -1,0 +1,26 @@
+type: "tac"
+epochs: 100
+initial_lr: 1.0e-3
+weight_decay: 1.0e-4
+lr_decay: .997
+batch_size: 8
+num_cores: 8
+train_test_split: 0.9
+
+dataset_dir: data/zoomed_out
+save_every: 10
+eval_every: 10
+eval_batch: 16
+
+feature_dim: 256
+
+augment: false
+cache_data: false
+spatial_aug: paired
+note: "ae"
+im_scale_range: [.18,.22]
+rgb_size: [192,192]
+tac_size: [192,192]
+
+load: True
+encoder_dir: "/home/ravenhuang/tactile/tac_vision/output/dark-valley-56/tac_encoder_450.pt"

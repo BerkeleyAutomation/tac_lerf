@@ -1,0 +1,41 @@
+# **
+# Training/optimization params
+# **
+epochs: 500
+initial_lr: 0.6e-4
+weight_decay: 1.0e-5
+lr_decay: .995
+use_temp: False
+init_temperature: 1.0
+grad_clip: .5
+model_type: regnet_800
+feature_dim: 8
+devices: [4,5,6,7]
+freeze_img_enc: False
+# **
+# Dataset params
+# **
+batch_size: 512
+accumulate_gradients: 1
+#batch size and eval_batch must be divisible by repeat_rotations
+#repeat_rotations is the number of times to include the same rotated image in the batch
+repeat_rotations: 1
+num_cores: 32
+train_test_split: 0.95
+dataset_dir: /raid/jkerr/tac_vision/data/ur_data
+heatmap_dir: /raid/jkerr/tac_vision/data/heatmap
+heatmap_scales: [.08,.1,.12,.15,.18]
+eval_every: 10
+eval_batch: 64
+use_background: False
+# spatial_aug can be none, independent, or paired
+# paired applies transforms which are consistent between pairs of training images
+# independent applies random transforms to each image independently
+# none does not apply any spatial transforms
+augment: true
+spatial_aug: independent
+im_scale_range: [.12,.18]
+#these specify the size of the largest dimension
+rgb_size: [128,128]
+tac_size: [128,128]
+cache_data: false
