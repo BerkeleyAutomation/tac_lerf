@@ -1,23 +1,29 @@
 from dataclasses import dataclass, field
 from typing import Tuple, Type
+from PIL import Image
 
 import torch
 import torchvision
 import torchvision.transforms.functional as TF
 
+import numpy as np
+
 from lerf.encoders.image_encoder import BaseImageEncoder, BaseImageEncoderConfig
 from tacvis.lightning_modules import ContrastiveModule, RotationModule
+from tacvis.dataset import PREPROC_IMG, TAC_AUGMENTS
+
 
 @dataclass
 class TacNetworkConfig(BaseImageEncoderConfig):
     _target: Type = field(default_factory=lambda: TacNetwork)
-    tac_dim: int = 128
-    rgb_dim: int = 128
-    rotations: Tuple[int] = (0)
-    model_dir: str = "/home/abrashid/lerf/tac-lerf/models/contrastive564715/models/epoch=459-step=2300.ckpt"
+    tac_dim: Tuple[int] = (128, 128)
+    rgb_dim: Tuple[int] = (128, 128)
+    rotations: Tuple[int] = (0,)
+    model_dir: str = "/home/abrashid/lerf/models/contrastive564715/models/epoch=459-step=2300.ckpt"
 
 class TacNetwork(BaseImageEncoder):
     def __init__(self, config: TacNetworkConfig):
+        super().__init__()
         self.config = config
         self.PREPROC_IMG = torchvision.transforms.Compose([
             torchvision.transforms.ToTensor()
@@ -33,8 +39,11 @@ class TacNetwork(BaseImageEncoder):
             ]
         )
         self.model = ContrastiveModule.load_from_checkpoint(self.config.model_dir).eval().cuda()
+        self.device = next(self.model.parameters()).device
         self.tac_enc = self.model.tac_enc
         self.img_enc = self.model.rgb_enc
+        self.tac_size = self.config.tac_dim
+        self.rgb_size = self.config.rgb_dim
         self.rotations = self.config.rotations
 
         """
@@ -42,11 +51,56 @@ class TacNetwork(BaseImageEncoder):
             For now we can hard code them in
         """
         #Preprocess the tac_images
-        tac_batches = "Path/to/tac_images"
-        tac_batches = [TF.rotate(tac_batches, rot) for rot in self.rotations]
-        tac_batches = torch.cat(tac_batches)  # num_rot*N dim
+        # tac_batches = "Path/to/tac_images"
+        path = "/home/abrashid/lerf/data/tac_data/test_data/images_tac/image_0_tac.jpg"
+        in_img = np.asarray(Image.open(path))
+        in_img = self.preprocess_tac([in_img])
+        
+        # tac_batches = tac_batches.to(self.device)
         with torch.no_grad():
-            self.tac_embeds = self.tac_enc(tac_batches).cpu()  # rot*N dim
+            self.tac_embeds = self.tac_enc(in_img).cpu()  # rot*N x dim
+        
+    def preprocess_tac(self, tac_list, do_aug=False, do_preproc=True):
+        '''
+        input: list of HxWxC np arrays
+        output: Nx3xWxW torch tensor, where N == len(self.rotations)*len(tac_list)
+        '''
+        tac_batch = tac_list
+        if do_preproc:
+            tac_batch = [PREPROC_IMG(tac) for tac in tac_list]  # cwh
+        if do_aug:
+            tac_batch = [TAC_AUGMENTS(tac) for tac in tac_list]
+        tac_batch = torch.stack(tac_batch).to(self.device)  # N*c*w*h
+        hpad = int(np.clip(max(tac_batch.shape[2], tac_batch.shape[3]) - tac_batch.shape[2], 0,
+                        np.inf) / 2)
+        wpad = int(np.clip(max(tac_batch.shape[2], tac_batch.shape[3]) - tac_batch.shape[3], 0,
+                        np.inf) / 2)
+        tac_batch = TF.pad(tac_batch, [wpad, hpad])
+        tac_batch = TF.rotate(tac_batch, 90)
+        tac_batch = TF.resize(tac_batch, self.tac_size)
+        # tac_batches = [TF.rotate(tac_batch,rot) for rot in self.rotations]
+        # tac_batches = torch.cat(tac_batches) #num_rot*N dim
+        return tac_batch
+
+    def preprocess_rgb(self, rgb_list, im_scale, rgb_size, grayscale=True):
+        '''
+        input: list of HxWxC np arrays
+        output: Nx3xWxW torch tensor, where N == len(self.rotations)*len(rgb_list)
+        '''
+        rgb_batch = [PREPROC_IMG(rgb) for rgb in rgb_list]  # cwh
+        rgb_batch = torch.stack(rgb_batch).to(self.device)  # N*c*w*h
+        if grayscale:
+            rgb_batch = TF.rgb_to_grayscale(rgb_batch, num_output_channels=3)
+        max_scale = rgb_size[0] / (im_scale * min(rgb_batch.shape[2], rgb_batch.shape[3]))
+        scaled_size = (int(max_scale * rgb_batch.shape[2]), int(max_scale * rgb_batch.shape[3]))
+        rgb = TF.resize(rgb_batch, scaled_size)
+        im_size = rgb_batch.shape[1:]
+        rgb = TF.center_crop(rgb, np.ceil(np.sqrt(2) * im_scale * max(rgb.shape[2], rgb.shape[3])))
+        crop_size = im_scale * max(im_size[1], im_size[2])
+        rgb = TF.center_crop(rgb, crop_size)
+        # finally, resize them to their specified dimensions
+        rgb = TF.resize(rgb, rgb_size)
+        return rgb
 
     @property
     def name(self) -> str:
@@ -54,7 +108,7 @@ class TacNetwork(BaseImageEncoder):
 
     @property
     def embedding_dim(self) -> int:
-        return self.config.tac_dim
+        return self.config.tac_dim[0]
 
     def encode_image(self, input):
         processed_input = self.process(input)
@@ -62,8 +116,11 @@ class TacNetwork(BaseImageEncoder):
 
 
     def get_relevancy(self, embed: torch.Tensor, positive_id: int) -> torch.Tensor:
-        tac = self.tac_embeds.to(embed.dtype)
-        dists = embed.mm(tac.T)  # M rot*N
-        dists = dists[..., positive_id : positive_id + 1]
-        # tac_batch = [self.PREPROC_IMG(tac) for tac in in_tac]  # cwh
-        # return tf.tensordot(embed, )
+        # embed dim - (# of rays in batch) x embed_dim
+        tac = self.tac_embeds.to(embed.dtype) # (#Tac_img*rot) x dim
+        sim = embed.mm(tac.T)  # (# of rays in batch) x (#Tac_img*rot)
+        sim = sim[..., positive_id : positive_id + 1] # (# of rays in batch) x 1
+        return sim
+
+if __name__ == '__main__':
+    x = TacNetwork(TacNetworkConfig())

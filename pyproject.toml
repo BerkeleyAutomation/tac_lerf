@@ -19,3 +19,4 @@ include = ["lerf"]
 lerf = 'lerf.lerf_config:lerf_method'
 lerf_big = 'lerf.lerf_config:lerf_method_big'
 lerf_lite = 'lerf.lerf_config:lerf_method_lite'
+tac_lerf = 'lerf.lerf_config:tac_lerf_method'

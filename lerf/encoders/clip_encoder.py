@@ -86,6 +86,25 @@ class CLIPNetwork(BaseImageEncoder):
             :, 0, :
         ]
 
+        # phrases_embeds = torch.cat([self.pos_embeds[positive_id:positive_id+1], self.neg_embeds], dim=0)
+        # p = phrases_embeds.to(embed.dtype)  # phrases x 512
+        # output = torch.mm(embed, p.T)  # rays x phrases
+        # positive_vals = output[..., 0:1]  # rays x 1
+        # negative_vals = output[..., 1:]  # rays x N_phrase
+        
+        # repeated_pos = positive_vals.repeat(1, len(self.negatives))  # rays x N_phrase
+
+        # sims = torch.stack((repeated_pos, negative_vals), dim=-1)  # rays x N-phrase x 2
+        # softmax = torch.softmax(10 * sims, dim=-1)  # rays x N-phrase x 2
+
+        # best_id = softmax[..., 0].argmin(dim=1)  # (rays)
+
+        # return torch.gather(softmax, 1, best_id[..., None, None].expand(best_id.shape[0], len(self.negatives), 2))[
+        #     :, 0, :
+        # ]
+    
+        # # find the (positive, negative) pair with the lowest positive score. the positive query is fixed here.
+
     def encode_image(self, input):
         processed_input = self.process(input).half()
         return self.model.encode_image(processed_input)

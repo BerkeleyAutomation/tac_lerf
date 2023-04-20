@@ -19,6 +19,57 @@ Swap out the network config to use OpenCLIP or CLIP here.
 """
 from lerf.encoders.clip_encoder import CLIPNetworkConfig
 from lerf.encoders.openclip_encoder import OpenCLIPNetworkConfig
+from lerf.encoders.tac_encoder import TacNetworkConfig
+
+
+#Tac-lerf
+tac_lerf_method = MethodSpecification(
+    config=TrainerConfig(
+        method_name="tac-lerf",
+        steps_per_eval_batch=500,
+        steps_per_save=2000,
+        max_num_iterations=30000,
+        mixed_precision=True,
+        pipeline=LERFPipelineConfig(
+            datamanager=LERFDataManagerConfig(
+                dataparser=NerfstudioDataParserConfig(train_split_fraction=0.99),
+                train_num_rays_per_batch=4096,
+                eval_num_rays_per_batch=4096,
+                camera_optimizer=CameraOptimizerConfig(
+                    mode="SO3xR3", optimizer=AdamOptimizerConfig(lr=6e-4, eps=1e-8, weight_decay=1e-2)
+                ),
+            ),
+            model=LERFModelConfig(
+                eval_num_rays_per_chunk=1 << 15,
+                # NOTE: exceeding 16 layers per hashgrid causes a segfault within Tiny CUDA NN, so instead we compose multiple hashgrids together
+                hashgrid_sizes=(19, 19),
+                hashgrid_layers=(12, 12),
+                hashgrid_resolutions=((16, 128), (128, 512)),
+                num_lerf_samples=24,
+            ),
+            network=TacNetworkConfig(
+    
+            ),
+        ),
+        optimizers={
+            "proposal_networks": {
+                "optimizer": AdamOptimizerConfig(lr=1e-2, eps=1e-15),
+                "scheduler": None,
+            },
+            "fields": {
+                "optimizer": RAdamOptimizerConfig(lr=1e-2, eps=1e-15),
+                "scheduler": ExponentialDecaySchedulerConfig(lr_final=1e-3, max_steps=30000),
+            },
+            "lerf": {
+                "optimizer": RAdamOptimizerConfig(lr=1e-2, eps=1e-15, weight_decay=1e-9),
+                "scheduler": ExponentialDecaySchedulerConfig(lr_final=1e-3, max_steps=4000),
+            },
+        },
+        viewer=ViewerConfig(num_rays_per_chunk=1 << 15),
+        vis="viewer",
+    ),
+    description="3D Tactile embeddings in NeRFs",
+)
 
 lerf_method = MethodSpecification(
     config=TrainerConfig(
@@ -71,6 +122,7 @@ lerf_method = MethodSpecification(
     ),
     description="Base config for LERF",
 )
+
 lerf_method_big = MethodSpecification(
     config=TrainerConfig(
         method_name="lerf-big",

@@ -106,7 +106,12 @@ class PatchEmbeddingDataloader(FeatureDataloader):
 
         with torch.no_grad():
             clip_embeds = self.model.encode_image(tiles)
-        clip_embeds /= clip_embeds.norm(dim=-1, keepdim=True)
+
+        f = open("log.txt", "a")
+        f.write(str(type(clip_embeds)))
+        f.close()
+        # No need to normalize because they are unit norm already
+        # clip_embeds /= clip_embeds.norm(dim=-1, keepdim=True)
 
         clip_embeds = clip_embeds.reshape((self.center_x.shape[0], self.center_y.shape[0], -1))
         clip_embeds = torch.concat((clip_embeds, clip_embeds[:, [-1], :]), dim=1)
