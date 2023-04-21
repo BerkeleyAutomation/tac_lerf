@@ -39,12 +39,13 @@ class TacNetwork(BaseImageEncoder):
             ]
         )
         self.model = ContrastiveModule.load_from_checkpoint(self.config.model_dir).eval().cuda()
+        self.model.eval_mode = True
         self.device = next(self.model.parameters()).device
         self.tac_enc = self.model.tac_enc
         self.img_enc = self.model.rgb_enc
         self.tac_size = self.config.tac_dim
         self.rgb_size = self.config.rgb_dim
-        self.rotations = self.config.rotations
+        self.rotations = self.config.rotations 
 
         """
         Incorporate recieving these tac batches from the viewer later if the results are good
@@ -112,7 +113,7 @@ class TacNetwork(BaseImageEncoder):
 
     def encode_image(self, input):
         processed_input = self.process(input)
-        return self.img_enc(processed_input).cpu().numpy()
+        return self.img_enc(processed_input).cpu()
 
 
     def get_relevancy(self, embed: torch.Tensor, positive_id: int) -> torch.Tensor:

@@ -104,16 +104,19 @@ class PatchEmbeddingDataloader(FeatureDataloader):
 
         tiles = unfold_func(aug_imgs).permute(2, 0, 1).reshape(-1, 3, self.kernel_size, self.kernel_size).to("cuda")
 
+        
         with torch.no_grad():
-            clip_embeds = self.model.encode_image(tiles)
+            enc_embeds = self.model.encode_image(tiles)
 
         f = open("log.txt", "a")
-        f.write(str(type(clip_embeds)))
+        f.write(str(tiles.shape) + "\n")
+        f.write(str(enc_embeds.shape) + "\n")
+        f.write("\n")
         f.close()
-        # No need to normalize because they are unit norm already
-        # clip_embeds /= clip_embeds.norm(dim=-1, keepdim=True)
+        # No need to normalize because they are unit norm already 
+        enc_embeds /= enc_embeds.norm(dim=-1, keepdim=True)
 
-        clip_embeds = clip_embeds.reshape((self.center_x.shape[0], self.center_y.shape[0], -1))
-        clip_embeds = torch.concat((clip_embeds, clip_embeds[:, [-1], :]), dim=1)
-        clip_embeds = torch.concat((clip_embeds, clip_embeds[[-1], :, :]), dim=0)
-        return clip_embeds.detach().cpu().numpy()
+        enc_embeds = enc_embeds.reshape((self.center_x.shape[0], self.center_y.shape[0], -1))
+        enc_embeds = torch.concat((enc_embeds, enc_embeds[:, [-1], :]), dim=1)
+        enc_embeds = torch.concat((enc_embeds, enc_embeds[[-1], :, :]), dim=0)
+        return enc_embeds.detach().cpu().numpy()

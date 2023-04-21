@@ -15,12 +15,13 @@ from tacvis.vit import SimpleViT
 
 
 class ContrastiveModule(pl.LightningModule):
-    def __init__(self, params):
+    def __init__(self, params, eval_mode=False):
         super().__init__()
         self.save_hyperparameters()
         self.params = params
         self.tac_enc = Encoder(**params)
         self.rgb_enc = Encoder(**params)
+        self.eval_mode = eval_mode
         if self.params['freeze_img_enc']:
             for p in self.rgb_enc.parameters():
                 p.requires_grad = False
@@ -31,6 +32,13 @@ class ContrastiveModule(pl.LightningModule):
                 torch.tensor(params['init_temperature'], requires_grad=True))
         else:
             self.temperature = torch.tensor(params['init_temperature'])
+
+    @property
+    def trainer(self):
+        if self.eval_mode:
+            return None
+        else:
+            return super().trainer()
 
     def training_step(self, data):
 
