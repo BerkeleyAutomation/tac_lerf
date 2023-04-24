@@ -108,11 +108,11 @@ class PatchEmbeddingDataloader(FeatureDataloader):
         with torch.no_grad():
             enc_embeds = self.model.encode_image(tiles)
 
-        f = open("log.txt", "a")
-        f.write(str(tiles.shape) + "\n")
-        f.write(str(enc_embeds.shape) + "\n")
-        f.write("\n")
-        f.close()
+        # f = open("log.txt", "a")
+        # f.write(str(tiles.shape) + "\n")
+        # f.write(str(enc_embeds.shape) + "\n")
+        # f.write("\n")
+        # f.close()
         # No need to normalize because they are unit norm already 
         enc_embeds /= enc_embeds.norm(dim=-1, keepdim=True)
 

@@ -118,9 +118,9 @@ class TacNetwork(BaseImageEncoder):
 
     def encode_image(self, input):
         processed_input = self.process(input)
-        f = open("/home/abrashid/lerf/tac_encoder_log.txt", "a")
-        f.write(str(type(input)) + "   " + str(input.shape) + "\n")
-        f.close()
+        # f = open("/home/abrashid/lerf/tac_encoder_log.txt", "a")
+        # f.write(str(type(input)) + "   " + str(input.shape) + "\n")
+        # f.close()
         return self.img_enc(processed_input)
 
 
