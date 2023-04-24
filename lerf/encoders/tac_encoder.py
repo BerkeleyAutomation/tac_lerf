@@ -18,6 +18,7 @@ class TacNetworkConfig(BaseImageEncoderConfig):
     _target: Type = field(default_factory=lambda: TacNetwork)
     tac_dim: Tuple[int] = (128, 128)
     rgb_dim: Tuple[int] = (128, 128)
+    encode_dim: int = 8
     rotations: Tuple[int] = (0,)
     model_dir: str = "/home/abrashid/lerf/models/contrastive564715/models/epoch=459-step=2300.ckpt"
 
@@ -30,7 +31,7 @@ class TacNetwork(BaseImageEncoder):
             ])
         self.process = torchvision.transforms.Compose(
             [
-                # torchvision.transforms.functional.rgb_to_grayscale(num_output_channels=3),
+                torchvision.transforms.Grayscale(num_output_channels=3),
                 torchvision.transforms.Resize((224, 224)),
                 torchvision.transforms.Normalize(
                     mean=[0.48145466, 0.4578275, 0.40821073],
@@ -45,7 +46,7 @@ class TacNetwork(BaseImageEncoder):
         self.img_enc = self.model.rgb_enc
         self.tac_size = self.config.tac_dim
         self.rgb_size = self.config.rgb_dim
-        self.rotations = self.config.rotations 
+        self.rotations = self.config.rotations
 
         """
         Incorporate recieving these tac batches from the viewer later if the results are good
@@ -53,13 +54,17 @@ class TacNetwork(BaseImageEncoder):
         """
         #Preprocess the tac_images
         # tac_batches = "Path/to/tac_images"
-        path = "/home/abrashid/lerf/data/tac_data/test_data/images_tac/image_0_tac.jpg"
-        in_img = np.asarray(Image.open(path))
-        in_img = self.preprocess_tac([in_img])
+        self.positives = ["/home/abrashid/lerf/data/tac_data/test_data/images_tac/image_0_tac.jpg",
+                          "/home/abrashid/lerf/data/tac_data/heatmap/images_set_0/image_tac_0.jpg",
+                          "/home/abrashid/lerf/data/tac_data/test_data/images_tac/image_49_tac.jpg"]
+        self.tac_list = []
+        # path = "/home/abrashid/lerf/data/tac_data/test_data/images_tac/image_0_tac.jpg"
+        for path in self.positives:
+            self.tac_list.append(np.asarray(Image.open(path)))
+        self.tac_batches = self.preprocess_tac(self.tac_list)
         
-        # tac_batches = tac_batches.to(self.device)
         with torch.no_grad():
-            self.tac_embeds = self.tac_enc(in_img).cpu()  # rot*N x dim
+            self.tac_embeds = self.tac_enc(self.tac_batches)  # rot*N x dim
         
     def preprocess_tac(self, tac_list, do_aug=False, do_preproc=True):
         '''
@@ -109,15 +114,25 @@ class TacNetwork(BaseImageEncoder):
 
     @property
     def embedding_dim(self) -> int:
-        return self.config.tac_dim[0]
+        return self.config.encode_dim
 
     def encode_image(self, input):
         processed_input = self.process(input)
-        return self.img_enc(processed_input).cpu()
+        f = open("/home/abrashid/lerf/tac_encoder_log.txt", "a")
+        f.write(str(type(input)) + "   " + str(input.shape) + "\n")
+        f.close()
+        return self.img_enc(processed_input)
 
 
     def get_relevancy(self, embed: torch.Tensor, positive_id: int) -> torch.Tensor:
         # embed dim - (# of rays in batch) x embed_dim
+
+        # f = open("/home/abrashid/lerf/tac_encoder_log.txt", "a")
+        # f.write(str(embed.get_device()) + "   " + str(embed.shape) + "\n")
+        # f.write(str(self.tac_embeds.get_device()) + "   " + str(self.tac_embeds.shape) + "\n")
+        # f.write("\n")
+        # f.close()
+
         tac = self.tac_embeds.to(embed.dtype) # (#Tac_img*rot) x dim
         sim = embed.mm(tac.T)  # (# of rays in batch) x (#Tac_img*rot)
         sim = sim[..., positive_id : positive_id + 1] # (# of rays in batch) x 1

@@ -28,6 +28,12 @@ class PyramidEmbeddingDataloader(FeatureDataloader):
         self.tile_sizes = torch.linspace(*cfg["tile_size_range"], cfg["tile_size_res"]).to(device)
         self.strider_scaler_list = [self._stride_scaler(tr.item(), cfg["stride_scaler"]) for tr in self.tile_sizes]
 
+        f = open("/home/abrashid/lerf/pyramid_embedding_dataloader_log.txt", "a")
+        f.write("tile_sizes: " + str(self.tile_sizes) + "\n")
+        f.write("strider_scaler_list: " + str(self.strider_scaler_list) + "\n")
+        f.write("\n")
+        f.close()
+
         self.model = model
         self.embed_size = self.model.embedding_dim
         self.data_dict = {}
@@ -98,6 +104,11 @@ class PyramidEmbeddingDataloader(FeatureDataloader):
 
         for i in range(len(self.tile_sizes) - 1):
             ids = img_points[random_scale_bin == i]
+            # f = open("/home/abrashid/lerf/pyramid_embedding_dataloader_log.txt", "a")
+            # f.write(str(bottom_interp[random_scale_bin == i].shape) + "\n")
+            # f.write(str(self.data_dict[i](ids).shape) + "\n")
+            # f.write("\n")
+            # f.close()
             bottom_interp[random_scale_bin == i] = self.data_dict[i](ids)
             top_interp[random_scale_bin == i] = self.data_dict[i + 1](ids)
 

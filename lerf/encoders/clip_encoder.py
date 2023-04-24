@@ -74,6 +74,13 @@ class CLIPNetwork(BaseImageEncoder):
     def get_relevancy(self, embed: torch.Tensor, positive_id: int) -> torch.Tensor:
         phrases_embeds = torch.cat([self.pos_embeds, self.neg_embeds], dim=0)
         p = phrases_embeds.to(embed.dtype)  # phrases x 512
+
+        # f = open("/home/abrashid/lerf/clip_encoder_log.txt", "a")
+        # f.write(str(embed.get_device()) + "   " + str(embed.shape) + "\n")
+        # f.write(str(p.get_device()) + "   " + str(p.shape) + "\n")
+        # f.write("\n")
+        # f.close()
+
         output = torch.mm(embed, p.T)  # rays x phrases
         positive_vals = output[..., positive_id : positive_id + 1]  # rays x 1
         negative_vals = output[..., len(self.positives) :]  # rays x N_phrase
