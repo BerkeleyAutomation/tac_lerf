@@ -43,7 +43,7 @@ from nerfstudio.data.datamanagers.base_datamanager import VanillaDataManager, Va
 @dataclass
 class LERFDataManagerConfig(VanillaDataManagerConfig):
     _target: Type = field(default_factory=lambda: LERFDataManager)
-    patch_tile_size_range: Tuple[int, int] = (0.05, 0.5)
+    patch_tile_size_range: Tuple[int, int] = (0.025, 0.5)
     patch_tile_size_res: int = 7
     patch_stride_scaler: float = 0.5
 
@@ -94,7 +94,7 @@ class LERFDataManager(VanillaDataManager):  # pylint: disable=abstract-method
             image_list=images,
             device=self.device,
             cfg={
-                "tile_size_range": [0.05, 0.5],
+                "tile_size_range": [0.025, 0.25],
                 "tile_size_res": 7,
                 "stride_scaler": 0.5,
                 "image_shape": list(images.shape[2:4]),

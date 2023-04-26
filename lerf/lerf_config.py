@@ -71,6 +71,53 @@ tac_lerf_method = MethodSpecification(
     description="3D Tactile embeddings in NeRFs",
 )
 
+tac_lerf_lite_method = MethodSpecification(
+    config=TrainerConfig(
+        method_name="tac-lerf-lite",
+        steps_per_eval_batch=500,
+        steps_per_save=2000,
+        max_num_iterations=30000,
+        mixed_precision=True,
+        pipeline=LERFPipelineConfig(
+            datamanager=LERFDataManagerConfig(
+                dataparser=NerfstudioDataParserConfig(train_split_fraction=0.99),
+                train_num_rays_per_batch=4096,
+                eval_num_rays_per_batch=4096,
+                camera_optimizer=CameraOptimizerConfig(
+                    mode="SO3xR3", optimizer=AdamOptimizerConfig(lr=6e-4, eps=1e-8, weight_decay=1e-2)
+                ),
+            ),
+            model=LERFModelConfig(
+                eval_num_rays_per_chunk=1 << 15,
+                hashgrid_sizes=(19,),
+                hashgrid_layers=(16,),
+                hashgrid_resolutions=((16, 512),),
+                num_lerf_samples=12,
+            ),
+            network=TacNetworkConfig(
+    
+            ),
+        ),
+        optimizers={
+            "proposal_networks": {
+                "optimizer": AdamOptimizerConfig(lr=1e-2, eps=1e-15),
+                "scheduler": None,
+            },
+            "fields": {
+                "optimizer": RAdamOptimizerConfig(lr=1e-2, eps=1e-15),
+                "scheduler": ExponentialDecaySchedulerConfig(lr_final=1e-3, max_steps=30000),
+            },
+            "lerf": {
+                "optimizer": RAdamOptimizerConfig(lr=1e-2, eps=1e-15, weight_decay=1e-9),
+                "scheduler": ExponentialDecaySchedulerConfig(lr_final=1e-3, max_steps=7000),
+            },
+        },
+        viewer=ViewerConfig(num_rays_per_chunk=1 << 15),
+        vis="viewer",
+    ),
+    description="A lightweight version of Tac-Lerf designed to work on smaller GPUs",
+)
+
 lerf_method = MethodSpecification(
     config=TrainerConfig(
         method_name="lerf",

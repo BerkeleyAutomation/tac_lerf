@@ -45,6 +45,7 @@ class PatchEmbeddingDataloader(FeatureDataloader):
 
         self.model = model
         self.embed_size = self.model.embedding_dim
+        self.MAX_BATCH = 1000
         super().__init__(cfg, device, image_list, cache_path)
 
     def load(self):
@@ -101,18 +102,17 @@ class PatchEmbeddingDataloader(FeatureDataloader):
     def _embed_clip_tiles(self, image, unfold_func):
         # image augmentation: slow-ish (0.02s for 600x800 image per augmentation)
         aug_imgs = torch.cat([image])
-
         tiles = unfold_func(aug_imgs).permute(2, 0, 1).reshape(-1, 3, self.kernel_size, self.kernel_size).to("cuda")
-
         
-        with torch.no_grad():
-            enc_embeds = self.model.encode_image(tiles)
-
-        # f = open("log.txt", "a")
-        # f.write(str(tiles.shape) + "\n")
-        # f.write(str(enc_embeds.shape) + "\n")
-        # f.write("\n")
-        # f.close()
+        #Batch the crops
+        i = 0
+        out = []
+        while i < tiles.shape[0]:
+            with torch.no_grad():
+                out.append(self.model.encode_image(tiles[i: i+self.MAX_BATCH, ...]))
+            i += self.MAX_BATCH
+        enc_embeds = torch.cat(out, dim=0)
+        
         # No need to normalize because they are unit norm already 
         enc_embeds /= enc_embeds.norm(dim=-1, keepdim=True)
 
