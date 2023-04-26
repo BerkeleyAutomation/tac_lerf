@@ -44,7 +44,7 @@ from nerfstudio.data.datamanagers.base_datamanager import VanillaDataManager, Va
 class LERFDataManagerConfig(VanillaDataManagerConfig):
     _target: Type = field(default_factory=lambda: LERFDataManager)
     patch_tile_size_range: Tuple[int, int] = (0.025, 0.5)
-    patch_tile_size_res: int = 7
+    patch_tile_size_res: int = 14
     patch_stride_scaler: float = 0.5
 
 
@@ -79,7 +79,8 @@ class LERFDataManager(VanillaDataManager):  # pylint: disable=abstract-method
         images = [self.train_dataset[i]["image"].permute(2, 0, 1)[None, ...] for i in range(len(self.train_dataset))]
         images = torch.cat(images)
 
-        cache_dir = f"outputs/{self.config.dataparser.data.name}"
+        # cache_dir = f"outputs/{self.config.dataparser.data.name}"
+        cache_dir = self.config.dataparser.data / 'lerf_cache'
         clip_cache_path = Path(osp.join(cache_dir, f"clip_{self.image_encoder.name}"))
         dino_cache_path = Path(osp.join(cache_dir, "dino.npy"))
         # NOTE: cache config is sensitive to list vs. tuple, because it checks for dict equality
@@ -94,8 +95,8 @@ class LERFDataManager(VanillaDataManager):  # pylint: disable=abstract-method
             image_list=images,
             device=self.device,
             cfg={
-                "tile_size_range": [0.025, 0.25],
-                "tile_size_res": 7,
+                "tile_size_range": [0.025, 0.5],
+                "tile_size_res": 14,
                 "stride_scaler": 0.5,
                 "image_shape": list(images.shape[2:4]),
                 "model_name": self.image_encoder.name,

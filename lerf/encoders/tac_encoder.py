@@ -56,7 +56,13 @@ class TacNetwork(BaseImageEncoder):
         # tac_batches = "Path/to/tac_images"
         self.positives = ["/home/abrashid/lerf/data/tac_data/test_data/images_tac/image_0_tac.jpg",
                           "/home/abrashid/lerf/data/tac_data/heatmap/images_set_0/image_tac_0.jpg",
-                          "/home/abrashid/lerf/data/tac_data/test_data/images_tac/image_49_tac.jpg"]
+                          "/home/abrashid/lerf/data/tac_data/test_data/images_tac/image_49_tac.jpg",
+                          "/home/abrashid/lerf/data/tac_data/heatmap/images_set_7/image_tac_0.jpg",
+                          "/home/abrashid/lerf/data/tac_data/heatmap/images_set_6/image_tac_0.jpg", 
+                          "/home/abrashid/lerf/data/tac_data/towel_rotated_yellow/images_set_2/image_tac_1.jpg",
+                          "/home/abrashid/lerf/data/tac_data/towel_rotated_yellow/images_set_2/image_tac_2.jpg",
+                          "/home/abrashid/lerf/data/tac_data/towel_rotated_yellow/images_set_2/image_tac_3.jpg"]
+
         self.tac_list = []
         # path = "/home/abrashid/lerf/data/tac_data/test_data/images_tac/image_0_tac.jpg"
         for path in self.positives:
